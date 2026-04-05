@@ -11,7 +11,7 @@ import { startEviction } from './lib/store.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 if (process.env.TRUST_PROXY === 'true') {
   app.set('trust proxy', true);
@@ -19,24 +19,24 @@ if (process.env.TRUST_PROXY === 'true') {
 
 app.use(cors());
 
-// Raw body capture for all content types
-const rawBodyCapture = (req, res, buf) => {
-  req.rawBody = buf.toString();
-};
-
-app.use(express.json({ limit: '1mb', verify: rawBodyCapture }));
-app.use(express.urlencoded({ extended: true, limit: '1mb', verify: rawBodyCapture }));
-app.use(express.raw({ type: '*/*', limit: '1mb', verify: rawBodyCapture }));
-app.use(express.text({ type: 'text/*', limit: '1mb', verify: rawBodyCapture }));
-
-// Static files
+// Static files (no body parsing needed)
 app.use(express.static(join(__dirname, 'public')));
 
-// API routes
-app.use('/api', apiRoutes);
+// API routes (only need JSON parsing)
+app.use('/api', express.json({ limit: '64kb' }), apiRoutes);
 
-// Hook capture routes
-app.use('/hook', hookRoutes);
+// Body parsers scoped to /hook only — avoids overhead on static/API routes
+const rawBodyCapture = (req, _res, buf) => {
+  req.rawBody = buf.toString();
+  req.rawBodySize = buf.length;
+};
+const hookParsers = [
+  express.json({ limit: '1mb', verify: rawBodyCapture }),
+  express.urlencoded({ extended: true, limit: '1mb', verify: rawBodyCapture }),
+  express.text({ type: 'text/*', limit: '1mb', verify: rawBodyCapture }),
+  express.raw({ type: '*/*', limit: '1mb', verify: rawBodyCapture }),
+];
+app.use('/hook', hookParsers, hookRoutes);
 
 // Create HTTP server and attach WebSocket
 const server = http.createServer(app);

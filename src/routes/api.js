@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createSession, getSession, deleteSession } from '../lib/store.js';
+import { createSession, getSession, getSessionRequests, deleteSession } from '../lib/store.js';
 
 const router = Router();
 
@@ -19,7 +19,12 @@ router.get('/sessions/:id', (req, res) => {
   if (!session) {
     return res.status(404).json({ error: 'Session not found' });
   }
-  res.json(session);
+  // Return ordered requests from circular buffer
+  res.json({
+    id: session.id,
+    createdAt: session.createdAt,
+    requests: getSessionRequests(session),
+  });
 });
 
 router.delete('/sessions/:id', (req, res) => {
