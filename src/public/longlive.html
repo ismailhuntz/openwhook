@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenWhook — Long-Live Sessions</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-tertiary: #242736;
+      --bg-hover: #2a2e3f;
+      --bg-active: #323752;
+      --border: #2e3348;
+      --text-primary: #e1e4ed;
+      --text-secondary: #8b90a5;
+      --text-muted: #5c6178;
+      --accent: #6c8cff;
+      --accent-hover: #8ba4ff;
+      --green: #4ade80;
+      --blue: #60a5fa;
+      --orange: #fb923c;
+      --red: #f87171;
+      --purple: #c084fc;
+      --yellow: #facc15;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --radius: 8px;
+      --radius-sm: 5px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      font-family: var(--font-sans);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+    .btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border); }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    /* Quota bar */
+    .quota-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .quota-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .quota-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .quota-count {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .quota-count .current { color: var(--accent); }
+    .quota-count .sep { color: var(--text-muted); margin: 0 2px; }
+    .quota-count .max { color: var(--text-muted); }
+
+    .quota-track {
+      flex: 1;
+      min-width: 120px;
+      max-width: 200px;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .quota-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .quota-fill.full { background: var(--red); }
+    .quota-fill.warn { background: var(--orange); }
+
+    /* Create form */
+    .create-form {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .create-input {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      color: var(--text-primary);
+      outline: none;
+      width: 220px;
+      transition: border-color 0.15s;
+    }
+
+    .create-input:focus { border-color: var(--accent); }
+    .create-input::placeholder { color: var(--text-muted); }
+
+    /* Alert */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .alert.show { display: flex; }
+    .alert-error { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: var(--red); }
+    .alert-success { background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); color: var(--green); }
+
+    .alert-icon { font-size: 16px; flex-shrink: 0; }
+    .alert-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.6;
+      padding: 0 4px;
+    }
+    .alert-close:hover { opacity: 1; }
+
+    /* Session cards */
+    .session-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .session-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      transition: border-color 0.15s;
+    }
+
+    .session-card:hover { border-color: var(--text-muted); }
+
+    .session-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .session-name {
+      font-size: 15px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .session-name.unnamed { color: var(--text-muted); font-style: italic; font-weight: 400; }
+
+    .session-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .session-url-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .session-url {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: all;
+    }
+
+    .session-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .session-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .empty-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* Confirm dialog */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .overlay.show { display: flex; }
+
+    .dialog {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+    }
+
+    .dialog-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .dialog-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .dialog-url {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--red);
+      background: var(--bg-primary);
+      border-radius: 4px;
+      padding: 6px 10px;
+      margin-bottom: 18px;
+      word-break: break-all;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .powered-by {
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .powered-by a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .powered-by a:hover { color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .container { padding: 20px 16px 60px; }
+      .page-title { font-size: 22px; }
+      .page-header { flex-direction: column; }
+      .quota-bar { flex-direction: column; align-items: flex-start; }
+      .quota-track { max-width: 100%; }
+      .create-form { flex-direction: column; align-items: stretch; }
+      .create-input { width: 100%; }
+      .session-card-top { flex-direction: column; align-items: flex-start; }
+      .session-url-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo">
+      <div class="logo-icon">W</div>
+      <span>OpenWhook</span>
+    </a>
+    <div class="header-actions">
+      <a href="/examples.html" class="btn">Examples</a>
+      <a href="/" class="btn btn-primary">&larr; Back to App</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Long-Live Sessions</h1>
+        <p class="page-subtitle">
+          Persistent webhook URLs that never expire. Only removed when you explicitly delete them.
+          Use these for stable integrations that need a permanent endpoint.
+        </p>
+      </div>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert alert-error" id="alertError">
+      <span class="alert-icon">!</span>
+      <span id="alertErrorText"></span>
+      <button class="alert-close" onclick="hideAlert('alertError')">&times;</button>
+    </div>
+    <div class="alert alert-success" id="alertSuccess">
+      <span class="alert-icon">&#10003;</span>
+      <span id="alertSuccessText"></span>
+      <button class="alert-close" onclick="hideAlert('alertSuccess')">&times;</button>
+    </div>
+
+    <!-- Quota -->
+    <div class="quota-bar">
+      <div class="quota-info">
+        <div>
+          <div class="quota-label">Sessions used</div>
+          <div class="quota-count">
+            <span class="current" id="quotaCurrent">0</span><span class="sep">/</span><span class="max" id="quotaMax">10</span>
+          </div>
+        </div>
+        <div class="quota-track">
+          <div class="quota-fill" id="quotaFill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="create-form">
+        <input type="text" class="create-input" id="sessionName" placeholder="Session name (optional)" maxlength="60" spellcheck="false">
+        <button class="btn btn-primary" id="createBtn">+ Create Session</button>
+      </div>
+    </div>
+
+    <!-- Session list -->
+    <div id="sessionList"></div>
+  </div>
+
+  <!-- Delete confirm dialog -->
+  <div class="overlay" id="deleteOverlay">
+    <div class="dialog">
+      <div class="dialog-title">Delete long-live session?</div>
+      <div class="dialog-text">This will permanently remove the session and all its captured requests. Any services sending webhooks to this URL will get 404 errors.</div>
+      <div class="dialog-url" id="deleteDialogUrl"></div>
+      <div class="dialog-actions">
+        <button class="btn" id="deleteCancelBtn">Cancel</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    let sessions = [];
+    let deleteTarget = null;
+
+    // ---- API ----
+
+    async function fetchSessions() {
+      const res = await fetch('/api/long-live');
+      const data = await res.json();
+      sessions = data.sessions || [];
+      updateQuota(data.count, data.max);
+      renderSessions();
+    }
+
+    async function createSession() {
+      const name = $('#sessionName').value.trim();
+      const res = await fetch('/api/long-live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert('error', data.error);
+        return;
+      }
+
+      $('#sessionName').value = '';
+      showAlert('success', `Session created: ${data.url}`);
+      await fetchSessions();
+    }
+
+    async function deleteSession(id) {
+      const res = await fetch(`/api/long-live/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showAlert('success', 'Session deleted successfully.');
+        await fetchSessions();
+      } else {
+        showAlert('error', 'Failed to delete session.');
+      }
+    }
+
+    // ---- Rendering ----
+
+    function updateQuota(count, max) {
+      $('#quotaCurrent').textContent = count;
+      $('#quotaMax').textContent = max;
+      const pct = max > 0 ? (count / max) * 100 : 0;
+      const fill = $('#quotaFill');
+      fill.style.width = pct + '%';
+      fill.classList.remove('full', 'warn');
+      if (pct >= 100) fill.classList.add('full');
+      else if (pct >= 80) fill.classList.add('warn');
+
+      $('#createBtn').disabled = count >= max;
+    }
+
+    function renderSessions() {
+      const container = $('#sessionList');
+
+      if (sessions.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">&#9675;</div>
+            <div class="empty-title">No long-live sessions yet</div>
+            <div class="empty-desc">Create a session above to get a permanent webhook URL that won't expire until you delete it.</div>
+          </div>`;
+        return;
+      }
+
+      const baseUrl = `${location.protocol}//${location.host}`;
+      container.innerHTML = sessions.map(s => {
+        const url = `${baseUrl}/hook/${s.id}`;
+        const date = new Date(s.createdAt);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        const nameHtml = s.name
+          ? `<span class="session-name">${escapeHtml(s.name)}</span>`
+          : `<span class="session-name unnamed">Unnamed session</span>`;
+
+        return `
+          <div class="session-card" data-id="${s.id}">
+            <div class="session-card-top">
+              ${nameHtml}
+              <div class="session-actions">
+                <button class="btn btn-sm" onclick="copyUrl('${s.id}')" data-copy="${s.id}">Copy URL</button>
+                <a class="btn btn-sm" href="/#session=${s.id}">Open</a>
+                <button class="btn btn-sm btn-danger" onclick="confirmDelete('${s.id}')">Delete</button>
+              </div>
+            </div>
+            <div class="session-url-row">
+              <div class="session-url" id="url-${s.id}">${escapeHtml(url)}</div>
+            </div>
+            <div class="session-meta">
+              <span>Created: ${dateStr} ${timeStr}</span>
+              <span>Requests: ${s.requestCount}</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${s.id}</span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ---- Clipboard ----
+
+    async function copyUrl(id) {
+      const baseUrl = `${location.protocol}//${location.host}`;
+      const url = `${baseUrl}/hook/${id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        const btn = document.querySelector(`[data-copy="${id}"]`);
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy URL'; }, 2000);
+      } catch {}
+    }
+
+    // ---- Delete confirmation ----
+
+    function confirmDelete(id) {
+      deleteTarget = id;
+      const baseUrl = `${location.protocol}//${location.host}`;
+      $('#deleteDialogUrl').textContent = `${baseUrl}/hook/${id}`;
+      $('#deleteOverlay').classList.add('show');
+    }
+
+    function closeDialog() {
+      $('#deleteOverlay').classList.remove('show');
+      deleteTarget = null;
+    }
+
+    $('#deleteCancelBtn').addEventListener('click', closeDialog);
+    $('#deleteOverlay').addEventListener('click', (e) => {
+      if (e.target === $('#deleteOverlay')) closeDialog();
+    });
+
+    $('#deleteConfirmBtn').addEventListener('click', async () => {
+      if (!deleteTarget) return;
+      const id = deleteTarget;
+      closeDialog();
+      await deleteSession(id);
+    });
+
+    // ---- Alerts ----
+
+    function showAlert(type, msg) {
+      hideAlert('alertError');
+      hideAlert('alertSuccess');
+      const id = type === 'error' ? 'alertError' : 'alertSuccess';
+      $(`#${id}Text`).textContent = msg;
+      $(`#${id}`).classList.add('show');
+      if (type === 'success') {
+        setTimeout(() => hideAlert(id), 5000);
+      }
+    }
+
+    function hideAlert(id) {
+      $(`#${id}`).classList.remove('show');
+    }
+
+    // ---- Events ----
+
+    $('#createBtn').addEventListener('click', createSession);
+    $('#sessionName').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') createSession();
+    });
+
+    // ---- Util ----
+
+    const _escMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const _escRe = /[&<>"']/g;
+    function escapeHtml(s) { return s.replace(_escRe, c => _escMap[c]); }
+
+    // ---- Runtime integrity ----
+    (function() {
+      const _k = [atob('cG93ZXJlZEJ5'), atob('aHVudHotZ3JvdXAuY29t'), atob('SHVudHogR3JvdXA=')];
+      function _chk() {
+        const el = document.getElementById(_k[0]);
+        if (!el || el.offsetParent === null && getComputedStyle(el).display === 'none') return false;
+        if (el.style.visibility === 'hidden' || el.style.opacity === '0' || el.getBoundingClientRect().height < 1) return false;
+        const a = el.querySelector('a');
+        return a && a.href.includes(_k[1]) && el.textContent.includes(_k[2]);
+      }
+      function _fail() {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;color:#f87171;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#8b90a5;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
+      }
+      setInterval(() => { if (!_chk()) _fail(); }, 3000);
+      new MutationObserver((muts) => {
+        for (const m of muts) { for (const n of m.removedNodes) { if (n.id === _k[0] || n.querySelector && n.querySelector('#' + _k[0])) { _fail(); return; } } }
+      }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style','class','hidden'] });
+    })();
+
+    // ---- Init ----
+    fetchSessions();
+  </script>
+
+  <div class="powered-by" id="poweredBy">Powered by <a href="https://huntz-group.com" target="_blank" rel="noopener">Huntz Group</a></div>
+</body>
+</html>

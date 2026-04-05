@@ -6,6 +6,9 @@ services:
     environment:
       - PORT=3000
       - SESSION_TTL_HOURS=24
-      - MAX_REQUESTS_PER_SESSION=200
+      - IDLE_TTL_HOURS=2
+      - MAX_SESSIONS=10
+      - MAX_LONG_LIVE_SESSIONS=10
+      - MAX_REQUESTS_PER_SESSION=100
       - TRUST_PROXY=false
     restart: unless-stopped

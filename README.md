@@ -45,7 +45,10 @@ docker run -p 3000:3000 openwhook
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Server listen port |
-| `SESSION_TTL_HOURS` | `24` | Hours before sessions expire |
+| `SESSION_TTL_HOURS` | `24` | Max session lifetime (hard cap) |
+| `IDLE_TTL_HOURS` | `2` | Evict sessions with no activity for this long |
+| `MAX_SESSIONS` | `10` | Max concurrent sessions (oldest evicted when full) |
+| `MAX_LONG_LIVE_SESSIONS` | `10` | Max long-live sessions (no TTL, deleted manually) |
 | `MAX_REQUESTS_PER_SESSION` | `200` | Max requests stored per session |
 | `TRUST_PROXY` | `false` | Set `true` when behind a reverse proxy |
 

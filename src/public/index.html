@@ -442,6 +442,59 @@
     .status-dot.disconnected { background: var(--red); }
     .status-dot.connecting { background: var(--yellow); animation: pulse 1s ease-in-out infinite; }
 
+    /* Long-live badge */
+    .ll-badge {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--purple);
+      background: rgba(192, 132, 252, 0.12);
+      border: 1px solid rgba(192, 132, 252, 0.25);
+      border-radius: 4px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+
+    .ll-badge.show { display: flex; }
+
+    .ll-badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--purple);
+      border-radius: 50%;
+    }
+
+    .ll-name {
+      display: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+
+    .ll-name.show { display: block; }
+
+    /* Powered-by (inline in status bar) */
+    .powered-by {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .powered-by a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .powered-by a:hover { color: var(--accent); }
+
     /* Responsive */
     @media (max-width: 768px) {
       .main { flex-direction: column; }
@@ -458,11 +511,15 @@
       <span>OpenWhook</span>
     </div>
     <div class="header-actions">
+      <a href="/examples.html" class="btn" id="examplesBtn">Examples</a>
+      <a href="/longlive.html" class="btn">Long-Live</a>
       <button class="btn btn-primary" id="newSessionBtn">+ New Session</button>
     </div>
   </header>
 
   <div class="url-bar">
+    <span class="ll-badge" id="llBadge"><span class="ll-badge-dot"></span> Long-Live</span>
+    <span class="ll-name" id="llName"></span>
     <span class="url-label">Your webhook URL:</span>
     <div class="url-display" id="webhookUrl">Loading...</div>
     <button class="btn btn-copy" id="copyBtn">Copy</button>
@@ -490,12 +547,14 @@
     </div>
   </div>
 
-  <div class="status-bar">
+  <div class="status-bar" id="poweredBy">
     <div class="status-indicator">
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Connected</span>
     </div>
+    <span id="sessionType"></span>
     <span id="requestTotal">0 requests captured</span>
+    <span class="powered-by">Powered by <a href="https://huntz-group.com" target="_blank" rel="noopener">Huntz Group</a></span>
   </div>
 
   <script>
@@ -503,6 +562,11 @@
     const state = {
       sessionId: null,
       webhookUrl: null,
+      longLive: false,
+      sessionName: null,
+      createdAt: null,
+      lastActivity: null,
+      expiryTimer: null,
       requests: [],
       requestMap: new Map(),  // id -> request for O(1) lookup
       selectedId: null,
@@ -518,6 +582,83 @@
       state.requestMap.clear();
       state.selectedId = null;
       state.activeEl = null;
+      state.longLive = false;
+      state.sessionName = null;
+      state.createdAt = null;
+      state.lastActivity = null;
+      if (state.expiryTimer) {
+        clearInterval(state.expiryTimer);
+        state.expiryTimer = null;
+      }
+    }
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return 'expired';
+      const totalSec = Math.floor(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      if (h > 0) return `${h}h ${m}m remaining`;
+      if (m > 0) return `${m}m ${s}s remaining`;
+      return `${s}s remaining`;
+    }
+
+    function updateSessionIndicator() {
+      const badge = $('#llBadge');
+      const nameEl = $('#llName');
+      const typeEl = $('#sessionType');
+
+      // Clear any existing timer
+      if (state.expiryTimer) {
+        clearInterval(state.expiryTimer);
+        state.expiryTimer = null;
+      }
+
+      if (state.longLive) {
+        badge.classList.add('show');
+        typeEl.textContent = 'Long-live session \u00b7 no expiry';
+        typeEl.style.color = 'var(--purple)';
+        if (state.sessionName) {
+          nameEl.textContent = state.sessionName;
+          nameEl.classList.add('show');
+        } else {
+          nameEl.classList.remove('show');
+        }
+      } else {
+        badge.classList.remove('show');
+        nameEl.classList.remove('show');
+        typeEl.style.color = 'var(--text-muted)';
+
+        if (state.createdAt) {
+          const updateExpiry = () => {
+            const now = Date.now();
+            const created = new Date(state.createdAt).getTime();
+            const ttlMs = 24 * 60 * 60 * 1000;
+            const idleMs = 2 * 60 * 60 * 1000;
+            const ttlRemaining = (created + ttlMs) - now;
+            const lastAct = state.lastActivity || created;
+            const idleRemaining = (lastAct + idleMs) - now;
+            const remaining = Math.min(ttlRemaining, idleRemaining);
+            const reason = idleRemaining <= ttlRemaining ? 'idle' : 'ttl';
+
+            if (remaining <= 0) {
+              typeEl.textContent = reason === 'idle' ? 'Session expired (idle)' : 'Session expired';
+              typeEl.style.color = 'var(--red)';
+              clearInterval(state.expiryTimer);
+            } else {
+              const label = reason === 'idle' ? 'Idle timeout in ' : 'Expires in ';
+              typeEl.textContent = label + formatCountdown(remaining);
+              if (remaining < 600000) typeEl.style.color = 'var(--red)';
+              else if (remaining < 3600000) typeEl.style.color = 'var(--orange)';
+              else typeEl.style.color = 'var(--text-muted)';
+            }
+          };
+          updateExpiry();
+          state.expiryTimer = setInterval(updateExpiry, 1000);
+        } else {
+          typeEl.textContent = '';
+        }
+      }
     }
 
     function indexRequests() {
@@ -528,13 +669,23 @@
     }
 
     async function createSession() {
+      // Delete the previous regular session to free memory
+      const prevId = state.sessionId;
+      const wasLongLive = state.longLive;
+      if (prevId && !wasLongLive) {
+        fetch(`/api/sessions/${prevId}`, { method: 'DELETE' }).catch(() => {});
+      }
+
       const res = await fetch('/api/sessions', { method: 'POST' });
       const data = await res.json();
+      resetState();
       state.sessionId = data.id;
       state.webhookUrl = data.url;
-      resetState();
+      state.createdAt = data.createdAt;
       window.location.hash = `session=${data.id}`;
       $('#webhookUrl').textContent = data.url;
+      updateSessionIndicator();
+      updateExamplesLink();
       renderRequests();
       renderDetail();
       connectWebSocket();
@@ -546,12 +697,17 @@
         if (!res.ok) throw new Error('not found');
         const data = await res.json();
         state.sessionId = data.id;
+        state.longLive = data.longLive || false;
+        state.sessionName = data.name || null;
+        state.createdAt = data.createdAt || null;
         const protocol = window.location.protocol;
         const host = window.location.host;
         state.webhookUrl = `${protocol}//${host}/hook/${data.id}`;
         state.requests = data.requests || [];
         indexRequests();
         $('#webhookUrl').textContent = state.webhookUrl;
+        updateSessionIndicator();
+        updateExamplesLink();
         renderRequests();
         if (state.requests.length > 0) {
           selectRequest(state.requests[state.requests.length - 1].id);
@@ -586,6 +742,7 @@
           const request = JSON.parse(event.data);
           state.requests.push(request);
           state.requestMap.set(request.id, request);
+          state.lastActivity = Date.now();
           renderNewRequest(request);
           updateCounts();
           if (state.requests.length === 1) {
@@ -809,6 +966,66 @@
     });
 
     $('#newSessionBtn').addEventListener('click', () => createSession());
+
+    // Keep examples link in sync with current session
+    const examplesLink = $('#examplesBtn');
+    const _origHref = examplesLink.href;
+    function updateExamplesLink() {
+      examplesLink.href = state.sessionId
+        ? `/examples.html#session=${state.sessionId}`
+        : _origHref;
+    }
+
+    // ---- Runtime integrity ----
+    // Application requires branding attribution to function.
+    // Removing or hiding the footer will disable the application.
+    (function() {
+      const _k = [
+        atob('cG93ZXJlZEJ5'),           // poweredBy
+        atob('aHVudHotZ3JvdXAuY29t'),   // huntz-group.com
+        atob('SHVudHogR3JvdXA='),        // Huntz Group
+      ];
+      const _s = { v: true };
+
+      function _chk() {
+        const el = document.getElementById(_k[0]);
+        if (!el) return false;
+        if (el.offsetParent === null && getComputedStyle(el).display === 'none') return false;
+        if (el.style.visibility === 'hidden' || el.style.opacity === '0') return false;
+        if (el.getBoundingClientRect().height < 1) return false;
+        const a = el.querySelector('a');
+        if (!a) return false;
+        if (!a.href.includes(_k[1])) return false;
+        if (!el.textContent.includes(_k[2])) return false;
+        return true;
+      }
+
+      function _fail() {
+        if (!_s.v) return;
+        _s.v = false;
+        if (state.ws) { state.ws.onclose = null; state.ws.close(); }
+        state.ws = null;
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;color:#f87171;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#8b90a5;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
+      }
+
+      // Periodic check every 3s
+      setInterval(() => { if (!_chk()) _fail(); }, 3000);
+
+      // MutationObserver: catch DOM removal/attribute changes
+      const _obs = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const n of m.removedNodes) {
+            if (n.id === _k[0] || (n.querySelector && n.querySelector('#' + _k[0]))) {
+              _fail(); return;
+            }
+          }
+          if (m.type === 'attributes' && m.target.id === _k[0]) {
+            if (!_chk()) { _fail(); return; }
+          }
+        }
+      });
+      _obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+    })();
 
     // ---- Init ----
 

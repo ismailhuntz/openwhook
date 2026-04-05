@@ -79,3 +79,12 @@ export function closeSession(sessionId) {
   }
   clients.delete(sessionId);
 }
+
+export function closeAll() {
+  for (const [id, set] of clients) {
+    for (const ws of set) {
+      ws.close(1001, 'Server shutting down');
+    }
+  }
+  clients.clear();
+}
