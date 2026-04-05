@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenWhook — Webhook Testing</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-tertiary: #242736;
+      --bg-hover: #2a2e3f;
+      --bg-active: #323752;
+      --border: #2e3348;
+      --text-primary: #e1e4ed;
+      --text-secondary: #8b90a5;
+      --text-muted: #5c6178;
+      --accent: #6c8cff;
+      --accent-hover: #8ba4ff;
+      --green: #4ade80;
+      --blue: #60a5fa;
+      --orange: #fb923c;
+      --red: #f87171;
+      --purple: #c084fc;
+      --yellow: #facc15;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --radius: 8px;
+      --radius-sm: 5px;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* URL Bar */
+    .url-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .url-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .url-display {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: all;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      font-family: var(--font-sans);
+    }
+
+    .btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    .btn-copy.copied { background: #1a3a2a; border-color: var(--green); color: var(--green); }
+
+    /* Main Content */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Request List */
+    .request-list {
+      width: 320px;
+      min-width: 260px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .request-list-header {
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .request-count {
+      background: var(--bg-tertiary);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .request-items {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-tertiary) transparent;
+    }
+
+    .request-items::-webkit-scrollbar { width: 6px; }
+    .request-items::-webkit-scrollbar-track { background: transparent; }
+    .request-items::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+
+    .request-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .request-item:hover { background: var(--bg-hover); }
+    .request-item.active { background: var(--bg-active); }
+
+    .request-item.new-request {
+      animation: flash 0.6s ease-out;
+    }
+
+    @keyframes flash {
+      0% { background: rgba(108, 140, 255, 0.2); }
+      100% { background: transparent; }
+    }
+
+    .method-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      min-width: 54px;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    .method-GET { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+    .method-POST { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
+    .method-PUT { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+    .method-PATCH { background: rgba(192, 132, 252, 0.15); color: var(--purple); }
+    .method-DELETE { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+    .method-HEAD { background: rgba(250, 204, 21, 0.15); color: var(--yellow); }
+    .method-OPTIONS { background: rgba(139, 144, 165, 0.15); color: var(--text-secondary); }
+
+    .request-meta {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .request-path {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .request-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 40px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* Detail Panel */
+    .detail-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-tertiary) transparent;
+    }
+
+    .detail-panel::-webkit-scrollbar { width: 6px; }
+    .detail-panel::-webkit-scrollbar-track { background: transparent; }
+    .detail-panel::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+
+    .detail-empty {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .detail-method {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .detail-info {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .detail-info-item {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .detail-info-item span {
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    .detail-section {
+      margin-bottom: 16px;
+    }
+
+    .detail-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .detail-section-count {
+      font-size: 11px;
+      font-weight: 400;
+      background: var(--bg-tertiary);
+      padding: 1px 7px;
+      border-radius: 8px;
+    }
+
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .detail-table th,
+    .detail-table td {
+      padding: 7px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-table th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-weight: 500;
+      width: 200px;
+      word-break: break-all;
+    }
+
+    .detail-table td {
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .detail-table tr:last-child th,
+    .detail-table tr:last-child td { border-bottom: none; }
+
+    .body-content {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .body-content .json-key { color: #7dd3fc; }
+    .body-content .json-string { color: #86efac; }
+    .body-content .json-number { color: #fbbf24; }
+    .body-content .json-bool { color: #c084fc; }
+    .body-content .json-null { color: var(--text-muted); }
+
+    /* Status Bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .status-dot.disconnected { background: var(--red); }
+    .status-dot.connecting { background: var(--yellow); animation: pulse 1s ease-in-out infinite; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main { flex-direction: column; }
+      .request-list { width: 100%; height: 45%; border-right: none; border-bottom: 1px solid var(--border); }
+      .url-bar { flex-wrap: wrap; }
+      .url-display { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">W</div>
+      <span>OpenWhook</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" id="newSessionBtn">+ New Session</button>
+    </div>
+  </header>
+
+  <div class="url-bar">
+    <span class="url-label">Your webhook URL:</span>
+    <div class="url-display" id="webhookUrl">Loading...</div>
+    <button class="btn btn-copy" id="copyBtn">Copy</button>
+  </div>
+
+  <div class="main">
+    <div class="request-list">
+      <div class="request-list-header">
+        <span>Requests</span>
+        <span class="request-count" id="requestCount">0</span>
+      </div>
+      <div class="request-items" id="requestItems">
+        <div class="empty-state" id="emptyState">
+          <div class="pulse-dot"></div>
+          <div class="empty-state-text">
+            Waiting for requests...<br>
+            Send a webhook to the URL above
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-empty">Select a request to view details</div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-indicator">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connected</span>
+    </div>
+    <span id="requestTotal">0 requests captured</span>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const state = {
+      sessionId: null,
+      webhookUrl: null,
+      requests: [],
+      selectedId: null,
+      ws: null,
+      reconnectDelay: 1000,
+    };
+
+    // ---- Session Management ----
+
+    async function createSession() {
+      const res = await fetch('/api/sessions', { method: 'POST' });
+      const data = await res.json();
+      state.sessionId = data.id;
+      state.webhookUrl = data.url;
+      state.requests = [];
+      state.selectedId = null;
+      window.location.hash = `session=${data.id}`;
+      $('#webhookUrl').textContent = data.url;
+      renderRequests();
+      renderDetail();
+      connectWebSocket();
+    }
+
+    async function loadSession(id) {
+      try {
+        const res = await fetch(`/api/sessions/${id}`);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        state.sessionId = data.id;
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        state.webhookUrl = `${protocol}//${host}/hook/${data.id}`;
+        state.requests = data.requests || [];
+        $('#webhookUrl').textContent = state.webhookUrl;
+        renderRequests();
+        if (state.requests.length > 0) {
+          selectRequest(state.requests[state.requests.length - 1].id);
+        }
+        connectWebSocket();
+      } catch {
+        await createSession();
+      }
+    }
+
+    // ---- WebSocket ----
+
+    function connectWebSocket() {
+      if (state.ws) {
+        state.ws.onclose = null;
+        state.ws.close();
+      }
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/${state.sessionId}`;
+
+      setStatus('connecting');
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        state.reconnectDelay = 1000;
+        setStatus('connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const request = JSON.parse(event.data);
+          state.requests.push(request);
+          renderNewRequest(request);
+          updateCounts();
+          if (state.requests.length === 1) {
+            selectRequest(request.id);
+          }
+        } catch {}
+      };
+
+      ws.onclose = () => {
+        setStatus('disconnected');
+        setTimeout(() => {
+          state.reconnectDelay = Math.min(state.reconnectDelay * 2, 30000);
+          connectWebSocket();
+        }, state.reconnectDelay);
+      };
+
+      ws.onerror = () => ws.close();
+      state.ws = ws;
+    }
+
+    function setStatus(status) {
+      const dot = $('#statusDot');
+      const text = $('#statusText');
+      dot.className = 'status-dot';
+      if (status === 'connected') {
+        text.textContent = 'Connected';
+      } else if (status === 'disconnected') {
+        dot.classList.add('disconnected');
+        text.textContent = 'Reconnecting...';
+      } else if (status === 'connecting') {
+        dot.classList.add('connecting');
+        text.textContent = 'Connecting...';
+      }
+    }
+
+    // ---- Rendering ----
+
+    function renderRequests() {
+      const container = $('#requestItems');
+      if (state.requests.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            <div class="pulse-dot"></div>
+            <div class="empty-state-text">Waiting for requests...<br>Send a webhook to the URL above</div>
+          </div>`;
+        return;
+      }
+      container.innerHTML = '';
+      // Show newest first
+      for (let i = state.requests.length - 1; i >= 0; i--) {
+        container.appendChild(createRequestItem(state.requests[i]));
+      }
+      updateCounts();
+    }
+
+    function renderNewRequest(request) {
+      const container = $('#requestItems');
+      const empty = container.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      const item = createRequestItem(request);
+      item.classList.add('new-request');
+      container.prepend(item);
+    }
+
+    function createRequestItem(req) {
+      const div = document.createElement('div');
+      div.className = `request-item${req.id === state.selectedId ? ' active' : ''}`;
+      div.dataset.id = req.id;
+
+      const time = new Date(req.timestamp);
+      const timeStr = time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const subPath = req.path.replace(`/hook/${state.sessionId}`, '') || '/';
+
+      div.innerHTML = `
+        <span class="method-badge method-${req.method}">${req.method}</span>
+        <div class="request-meta">
+          <div class="request-path">${escapeHtml(subPath)}</div>
+          <div class="request-time">${timeStr} &middot; ${formatSize(req.size)}</div>
+        </div>`;
+
+      div.addEventListener('click', () => selectRequest(req.id));
+      return div;
+    }
+
+    function selectRequest(id) {
+      state.selectedId = id;
+
+      // Update active state
+      document.querySelectorAll('.request-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.id === id);
+      });
+
+      renderDetail();
+    }
+
+    function renderDetail() {
+      const panel = $('#detailPanel');
+      const req = state.requests.find(r => r.id === state.selectedId);
+
+      if (!req) {
+        panel.innerHTML = '<div class="detail-empty">Select a request to view details</div>';
+        return;
+      }
+
+      const time = new Date(req.timestamp);
+      const timeStr = time.toLocaleString();
+      const subPath = req.path.replace(`/hook/${state.sessionId}`, '') || '/';
+
+      const headerEntries = Object.entries(req.headers || {});
+      const queryEntries = Object.entries(req.query || {});
+
+      let bodyHtml = '';
+      if (req.body && req.body.length > 0) {
+        let formatted = escapeHtml(req.body);
+        try {
+          const parsed = JSON.parse(req.body);
+          formatted = syntaxHighlight(JSON.stringify(parsed, null, 2));
+        } catch {}
+
+        bodyHtml = `
+          <div class="detail-section">
+            <div class="detail-section-title">
+              Body
+              <span class="detail-section-count">${formatSize(req.size)}</span>
+            </div>
+            <div class="body-content">${formatted}</div>
+          </div>`;
+      }
+
+      panel.innerHTML = `
+        <div class="detail-header">
+          <span class="method-badge method-${req.method}" style="font-size:14px; padding:5px 12px;">${req.method}</span>
+          <div class="detail-info">
+            <div class="detail-info-item">Path: <span>${escapeHtml(subPath)}</span></div>
+            <div class="detail-info-item">IP: <span>${escapeHtml(req.ip || 'unknown')}</span></div>
+            <div class="detail-info-item">Time: <span>${timeStr}</span></div>
+            ${req.contentType ? `<div class="detail-info-item">Type: <span>${escapeHtml(req.contentType)}</span></div>` : ''}
+          </div>
+        </div>
+
+        ${headerEntries.length > 0 ? `
+        <div class="detail-section">
+          <div class="detail-section-title">
+            Headers
+            <span class="detail-section-count">${headerEntries.length}</span>
+          </div>
+          <table class="detail-table">
+            ${headerEntries.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        ${queryEntries.length > 0 ? `
+        <div class="detail-section">
+          <div class="detail-section-title">
+            Query Parameters
+            <span class="detail-section-count">${queryEntries.length}</span>
+          </div>
+          <table class="detail-table">
+            ${queryEntries.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join('')}
+          </table>
+        </div>` : ''}
+
+        ${bodyHtml}
+      `;
+    }
+
+    function updateCounts() {
+      const count = state.requests.length;
+      $('#requestCount').textContent = count;
+      $('#requestTotal').textContent = `${count} request${count !== 1 ? 's' : ''} captured`;
+    }
+
+    // ---- Utilities ----
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function syntaxHighlight(json) {
+      return escapeHtml(json).replace(
+        /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        (match) => {
+          let cls = 'json-number';
+          if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? 'json-key' : 'json-string';
+          } else if (/true|false/.test(match)) {
+            cls = 'json-bool';
+          } else if (/null/.test(match)) {
+            cls = 'json-null';
+          }
+          return `<span class="${cls}">${match}</span>`;
+        }
+      );
+    }
+
+    // ---- Event Handlers ----
+
+    $('#copyBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(state.webhookUrl);
+        const btn = $('#copyBtn');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch {}
+    });
+
+    $('#newSessionBtn').addEventListener('click', () => createSession());
+
+    // ---- Init ----
+
+    (async function init() {
+      const hash = window.location.hash;
+      const match = hash.match(/session=([a-f0-9-]+)/);
+      if (match) {
+        await loadSession(match[1]);
+      } else {
+        await createSession();
+      }
+    })();
+  </script>
+</body>
+</html>

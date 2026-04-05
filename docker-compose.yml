@@ -1,0 +1,11 @@
+services:
+  openwhook:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - SESSION_TTL_HOURS=24
+      - MAX_REQUESTS_PER_SESSION=200
+      - TRUST_PROXY=false
+    restart: unless-stopped

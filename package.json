@@ -1,0 +1,25 @@
+{
+  "name": "openwhook",
+  "version": "1.0.0",
+  "description": "Open-source webhook testing tool. Capture, inspect, and debug HTTP requests in real-time.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["webhook", "testing", "http", "debugging", "inspector"],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
