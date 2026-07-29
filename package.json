@@ -8,12 +8,18 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
-  "keywords": ["webhook", "testing", "http", "debugging", "inspector"],
+  "keywords": [
+    "webhook",
+    "testing",
+    "http",
+    "debugging",
+    "inspector"
+  ],
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.0",
-    "ws": "^8.18.0"
+    "express": "^4.22.2",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
