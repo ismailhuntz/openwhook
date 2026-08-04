@@ -4,29 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenWhook — Long-Live Sessions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-primary: #0f1117;
-      --bg-secondary: #1a1d27;
-      --bg-tertiary: #242736;
-      --bg-hover: #2a2e3f;
-      --bg-active: #323752;
-      --border: #2e3348;
-      --text-primary: #e1e4ed;
-      --text-secondary: #8b90a5;
-      --text-muted: #5c6178;
-      --accent: #6c8cff;
-      --accent-hover: #8ba4ff;
-      --green: #4ade80;
-      --blue: #60a5fa;
-      --orange: #fb923c;
-      --red: #f87171;
-      --purple: #c084fc;
-      --yellow: #facc15;
+      --bg-primary: #fafafa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f2f4;
+      --bg-hover: #eceef1;
+      --bg-active: #f6ecd4;
+      --border: #e4e4e7;
+      --text-primary: #0f172a;
+      --text-secondary: #52525b;
+      --text-muted: #8a8f98;
+      --accent: #c9a227;
+      --accent-hover: #a8861d;
+      --accent-ink: #1c1917;
+      --green: #15803d;
+      --blue: #1d4ed8;
+      --orange: #c2410c;
+      --red: #b91c1c;
+      --teal: #0f766e;
+      --yellow: #a16207;
       --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --radius: 8px;
       --radius-sm: 5px;
     }
@@ -70,7 +74,8 @@
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      color: #fff;
+      color: var(--accent-ink);
+      font-weight: 700;
     }
 
     .header-actions { display: flex; gap: 8px; }
@@ -95,10 +100,10 @@
 
     .btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
     .btn:active { transform: scale(0.97); }
-    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
     .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
-    .btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
+    .btn-danger:hover { background: #fef2f2; }
     .btn-sm { padding: 5px 10px; font-size: 12px; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn:disabled:hover { background: var(--bg-tertiary); border-color: var(--border); }
@@ -162,7 +167,7 @@
       font-weight: 700;
     }
 
-    .quota-count .current { color: var(--accent); }
+    .quota-count .current { color: var(--accent-hover); }
     .quota-count .sep { color: var(--text-muted); margin: 0 2px; }
     .quota-count .max { color: var(--text-muted); }
 
@@ -223,8 +228,8 @@
     }
 
     .alert.show { display: flex; }
-    .alert-error { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: var(--red); }
-    .alert-success { background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); color: var(--green); }
+    .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: var(--red); }
+    .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--green); }
 
     .alert-icon { font-size: 16px; flex-shrink: 0; }
     .alert-close {
@@ -290,7 +295,7 @@
       flex: 1;
       font-family: var(--font-mono);
       font-size: 12px;
-      color: var(--accent);
+      color: var(--accent-hover);
       background: var(--bg-primary);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -676,7 +681,7 @@
         return a && a.href.includes(_k[1]) && el.textContent.includes(_k[2]);
       }
       function _fail() {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;color:#f87171;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#8b90a5;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;color:#b91c1c;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#52525b;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
       }
       setInterval(() => { if (!_chk()) _fail(); }, 3000);
       new MutationObserver((muts) => {

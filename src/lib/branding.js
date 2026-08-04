@@ -22,7 +22,8 @@ const REQUIRED_PREFIX = _d(_t[2]);
  * Checks for: the domain in an href, the label text, and the "Powered by" prefix.
  */
 export function verifyContent(html) {
-  const domainOk = html.includes(REQUIRED_DOMAIN) && html.includes(`href="`);
+  // Require the domain inside an explicit https href — not just anywhere in the file.
+  const domainOk = html.includes(`href="https://${REQUIRED_DOMAIN}`);
   const labelOk = html.includes(REQUIRED_LABEL);
   const prefixOk = html.includes(REQUIRED_PREFIX);
   return domainOk && labelOk && prefixOk;

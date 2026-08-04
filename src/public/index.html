@@ -4,29 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenWhook — Webhook Testing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-primary: #0f1117;
-      --bg-secondary: #1a1d27;
-      --bg-tertiary: #242736;
-      --bg-hover: #2a2e3f;
-      --bg-active: #323752;
-      --border: #2e3348;
-      --text-primary: #e1e4ed;
-      --text-secondary: #8b90a5;
-      --text-muted: #5c6178;
-      --accent: #6c8cff;
-      --accent-hover: #8ba4ff;
-      --green: #4ade80;
-      --blue: #60a5fa;
-      --orange: #fb923c;
-      --red: #f87171;
-      --purple: #c084fc;
-      --yellow: #facc15;
+      --bg-primary: #fafafa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f2f4;
+      --bg-hover: #eceef1;
+      --bg-active: #f6ecd4;
+      --border: #e4e4e7;
+      --text-primary: #0f172a;
+      --text-secondary: #52525b;
+      --text-muted: #8a8f98;
+      --accent: #c9a227;
+      --accent-hover: #a8861d;
+      --accent-ink: #1c1917;
+      --green: #15803d;
+      --blue: #1d4ed8;
+      --orange: #c2410c;
+      --red: #b91c1c;
+      --teal: #0f766e;
+      --yellow: #a16207;
       --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --radius: 8px;
       --radius-sm: 5px;
     }
@@ -56,20 +60,22 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.4px;
     }
 
     .logo-icon {
       width: 28px;
       height: 28px;
       background: var(--accent);
+      color: var(--accent-ink);
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 700;
     }
 
     .header-actions {
@@ -103,7 +109,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 8px 12px;
-      color: var(--accent);
+      color: var(--accent-hover);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -115,7 +121,7 @@
       padding: 7px 14px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      background: var(--bg-tertiary);
+      background: var(--bg-secondary);
       color: var(--text-primary);
       font-size: 13px;
       font-weight: 500;
@@ -123,6 +129,10 @@
       transition: all 0.15s;
       white-space: nowrap;
       font-family: var(--font-sans);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
@@ -131,11 +141,104 @@
     .btn-primary {
       background: var(--accent);
       border-color: var(--accent);
-      color: #fff;
+      color: var(--accent-ink);
+      font-weight: 600;
     }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 
-    .btn-copy.copied { background: #1a3a2a; border-color: var(--green); color: var(--green); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .btn-copy.copied { background: #f0fdf4; border-color: var(--green); color: var(--green); }
+
+    .btn.active-toggle { border-color: var(--accent); color: var(--accent-hover); background: var(--bg-active); }
+
+    /* Response customization panel */
+    .response-panel {
+      display: none;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      padding: 14px 20px;
+      flex-shrink: 0;
+    }
+
+    .response-panel.show { display: block; }
+
+    .response-panel-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .response-panel-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .response-form {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .response-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .response-field label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .response-input, .response-textarea {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .response-input:focus, .response-textarea:focus { border-color: var(--accent); }
+
+    .response-input.status { width: 90px; }
+    .response-input.ct { width: 220px; }
+
+    .response-textarea {
+      width: 100%;
+      min-width: 280px;
+      min-height: 72px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .response-field.grow { flex: 1; min-width: 280px; }
+
+    .response-actions {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      padding-bottom: 1px;
+    }
+
+    .response-status-note {
+      font-size: 12px;
+      margin-top: 10px;
+      color: var(--text-muted);
+    }
+
+    .response-status-note.custom { color: var(--accent-hover); font-weight: 500; }
 
     /* Main Content */
     .main {
@@ -146,8 +249,8 @@
 
     /* Request List */
     .request-list {
-      width: 320px;
-      min-width: 260px;
+      width: 340px;
+      min-width: 280px;
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -166,6 +269,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
+    }
+
+    .request-list-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .request-count {
@@ -175,16 +285,72 @@
       font-size: 11px;
     }
 
+    .clear-all-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      padding: 2px 4px;
+      border-radius: 4px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .clear-all-btn:hover { color: var(--red); background: #fef2f2; }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .filter-input {
+      flex: 1;
+      min-width: 0;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .filter-input:focus { border-color: var(--accent); }
+    .filter-input::placeholder { color: var(--text-muted); }
+
+    .filter-method {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 6px;
+      color: var(--text-secondary);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-method:focus { border-color: var(--accent); }
+
     .request-items {
       flex: 1;
       overflow-y: auto;
       scrollbar-width: thin;
-      scrollbar-color: var(--bg-tertiary) transparent;
+      scrollbar-color: var(--border) transparent;
     }
 
     .request-items::-webkit-scrollbar { width: 6px; }
     .request-items::-webkit-scrollbar-track { background: transparent; }
-    .request-items::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+    .request-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
     .request-item {
       padding: 10px 16px;
@@ -197,14 +363,14 @@
     }
 
     .request-item:hover { background: var(--bg-hover); }
-    .request-item.active { background: var(--bg-active); }
+    .request-item.active { background: var(--bg-active); box-shadow: inset 3px 0 0 var(--accent); }
 
     .request-item.new-request {
       animation: flash 0.6s ease-out;
     }
 
     @keyframes flash {
-      0% { background: rgba(108, 140, 255, 0.2); }
+      0% { background: rgba(201, 162, 39, 0.22); }
       100% { background: transparent; }
     }
 
@@ -217,15 +383,17 @@
       min-width: 54px;
       text-align: center;
       letter-spacing: 0.3px;
+      flex-shrink: 0;
     }
 
-    .method-GET { background: rgba(74, 222, 128, 0.15); color: var(--green); }
-    .method-POST { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
-    .method-PUT { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
-    .method-PATCH { background: rgba(192, 132, 252, 0.15); color: var(--purple); }
-    .method-DELETE { background: rgba(248, 113, 113, 0.15); color: var(--red); }
-    .method-HEAD { background: rgba(250, 204, 21, 0.15); color: var(--yellow); }
-    .method-OPTIONS { background: rgba(139, 144, 165, 0.15); color: var(--text-secondary); }
+    .method-GET { background: #dcfce7; color: var(--green); }
+    .method-POST { background: #dbeafe; color: var(--blue); }
+    .method-PUT { background: #ffedd5; color: var(--orange); }
+    .method-PATCH { background: #ccfbf1; color: var(--teal); }
+    .method-DELETE { background: #fee2e2; color: var(--red); }
+    .method-HEAD { background: #fef9c3; color: var(--yellow); }
+    .method-OPTIONS { background: #f1f5f9; color: var(--text-secondary); }
+    .method-OTHER { background: #f1f5f9; color: var(--text-secondary); }
 
     .request-meta {
       flex: 1;
@@ -247,6 +415,24 @@
       margin-top: 2px;
     }
 
+    .req-delete {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.1s;
+      flex-shrink: 0;
+      font-family: var(--font-sans);
+    }
+
+    .request-item:hover .req-delete { opacity: 1; }
+    .req-delete:hover { color: var(--red); background: #fef2f2; }
+
     .empty-state {
       flex: 1;
       display: flex;
@@ -257,11 +443,7 @@
       gap: 12px;
       padding: 40px;
       text-align: center;
-    }
-
-    .empty-state-icon {
-      font-size: 40px;
-      opacity: 0.5;
+      min-height: 180px;
     }
 
     .empty-state-text {
@@ -288,12 +470,12 @@
       overflow-y: auto;
       padding: 20px;
       scrollbar-width: thin;
-      scrollbar-color: var(--bg-tertiary) transparent;
+      scrollbar-color: var(--border) transparent;
     }
 
     .detail-panel::-webkit-scrollbar { width: 6px; }
     .detail-panel::-webkit-scrollbar-track { background: transparent; }
-    .detail-panel::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+    .detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
     .detail-empty {
       height: 100%;
@@ -312,16 +494,11 @@
       flex-wrap: wrap;
     }
 
-    .detail-method {
-      font-family: var(--font-mono);
-      font-size: 16px;
-      font-weight: 700;
-    }
-
     .detail-info {
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
+      flex: 1;
     }
 
     .detail-info-item {
@@ -332,6 +509,11 @@
     .detail-info-item span {
       color: var(--text-primary);
       font-family: var(--font-mono);
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 6px;
     }
 
     .detail-section {
@@ -366,6 +548,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       overflow: hidden;
+      background: var(--bg-secondary);
     }
 
     .detail-table th,
@@ -392,7 +575,7 @@
     .detail-table tr:last-child td { border-bottom: none; }
 
     .body-content {
-      background: var(--bg-tertiary);
+      background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 14px;
@@ -407,10 +590,10 @@
       position: relative;
     }
 
-    .body-content .json-key { color: #7dd3fc; }
-    .body-content .json-string { color: #86efac; }
-    .body-content .json-number { color: #fbbf24; }
-    .body-content .json-bool { color: #c084fc; }
+    .body-content .json-key { color: #0369a1; }
+    .body-content .json-string { color: #15803d; }
+    .body-content .json-number { color: #b45309; }
+    .body-content .json-bool { color: #7c3aed; }
     .body-content .json-null { color: var(--text-muted); }
 
     /* Status Bar */
@@ -424,6 +607,7 @@
       font-size: 12px;
       color: var(--text-muted);
       flex-shrink: 0;
+      gap: 12px;
     }
 
     .status-indicator {
@@ -440,7 +624,7 @@
     }
 
     .status-dot.disconnected { background: var(--red); }
-    .status-dot.connecting { background: var(--yellow); animation: pulse 1s ease-in-out infinite; }
+    .status-dot.connecting { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
 
     /* Long-live badge */
     .ll-badge {
@@ -451,9 +635,9 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      color: var(--purple);
-      background: rgba(192, 132, 252, 0.12);
-      border: 1px solid rgba(192, 132, 252, 0.25);
+      color: var(--accent-hover);
+      background: var(--bg-active);
+      border: 1px solid var(--accent);
       border-radius: 4px;
       padding: 3px 9px;
       white-space: nowrap;
@@ -464,7 +648,7 @@
     .ll-badge-dot {
       width: 6px;
       height: 6px;
-      background: var(--purple);
+      background: var(--accent);
       border-radius: 50%;
     }
 
@@ -493,7 +677,7 @@
       font-weight: 500;
     }
 
-    .powered-by a:hover { color: var(--accent); }
+    .powered-by a:hover { color: var(--accent-hover); }
 
     /* Responsive */
     @media (max-width: 768px) {
@@ -511,6 +695,7 @@
       <span>OpenWhook</span>
     </div>
     <div class="header-actions">
+      <button class="btn" id="responseBtn">Response</button>
       <a href="/examples.html" class="btn" id="examplesBtn">Examples</a>
       <a href="/longlive.html" class="btn">Long-Live</a>
       <button class="btn btn-primary" id="newSessionBtn">+ New Session</button>
@@ -525,11 +710,54 @@
     <button class="btn btn-copy" id="copyBtn">Copy</button>
   </div>
 
+  <div class="response-panel" id="responsePanel">
+    <div class="response-panel-title">Custom Hook Response</div>
+    <div class="response-panel-hint">
+      By default your hook URL replies <code>200 {"ok":true}</code>. Set a custom status code and body here
+      to simulate your real endpoint &mdash; useful for testing retry and error-handling logic.
+    </div>
+    <div class="response-form">
+      <div class="response-field">
+        <label for="respStatus">Status code</label>
+        <input type="number" class="response-input status" id="respStatus" min="100" max="599" value="200">
+      </div>
+      <div class="response-field">
+        <label for="respContentType">Content-Type</label>
+        <input type="text" class="response-input ct" id="respContentType" value="application/json" maxlength="100" spellcheck="false">
+      </div>
+      <div class="response-field grow">
+        <label for="respBody">Body</label>
+        <textarea class="response-textarea" id="respBody" placeholder='{"ok":true}' spellcheck="false"></textarea>
+      </div>
+      <div class="response-actions">
+        <button class="btn btn-primary btn-sm" id="respSaveBtn">Save</button>
+        <button class="btn btn-sm" id="respResetBtn">Reset to default</button>
+      </div>
+    </div>
+    <div class="response-status-note" id="respNote"></div>
+  </div>
+
   <div class="main">
     <div class="request-list">
       <div class="request-list-header">
-        <span>Requests</span>
-        <span class="request-count" id="requestCount">0</span>
+        <span class="request-list-header-left">
+          <span>Requests</span>
+          <span class="request-count" id="requestCount">0</span>
+        </span>
+        <button class="clear-all-btn" id="clearAllBtn" title="Delete all captured requests">Clear all</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" class="filter-input" id="filterText" placeholder="Filter path, body, headers, IP..." spellcheck="false">
+        <select class="filter-method" id="filterMethod">
+          <option value="">All methods</option>
+          <option>GET</option>
+          <option>POST</option>
+          <option>PUT</option>
+          <option>PATCH</option>
+          <option>DELETE</option>
+          <option>HEAD</option>
+          <option>OPTIONS</option>
+        </select>
       </div>
       <div class="request-items" id="requestItems">
         <div class="empty-state" id="emptyState">
@@ -569,8 +797,12 @@
       expiryTimer: null,
       requests: [],
       requestMap: new Map(),  // id -> request for O(1) lookup
+      elements: new Map(),    // id -> list item DOM node
       selectedId: null,
-      activeEl: null,         // track active DOM element directly
+      activeEl: null,
+      filterText: '',
+      filterMethod: '',
+      responseConfig: null,
       ws: null,
       reconnectDelay: 1000,
     };
@@ -580,12 +812,14 @@
     function resetState() {
       state.requests = [];
       state.requestMap.clear();
+      state.elements.clear();
       state.selectedId = null;
       state.activeEl = null;
       state.longLive = false;
       state.sessionName = null;
       state.createdAt = null;
       state.lastActivity = null;
+      state.responseConfig = null;
       if (state.expiryTimer) {
         clearInterval(state.expiryTimer);
         state.expiryTimer = null;
@@ -616,8 +850,8 @@
 
       if (state.longLive) {
         badge.classList.add('show');
-        typeEl.textContent = 'Long-live session \u00b7 no expiry';
-        typeEl.style.color = 'var(--purple)';
+        typeEl.textContent = 'Long-live session · no expiry';
+        typeEl.style.color = 'var(--accent-hover)';
         if (state.sessionName) {
           nameEl.textContent = state.sessionName;
           nameEl.classList.add('show');
@@ -668,6 +902,22 @@
       }
     }
 
+    function applySessionData(data) {
+      state.sessionId = data.id;
+      state.longLive = data.longLive || false;
+      state.sessionName = data.name || null;
+      state.createdAt = data.createdAt || null;
+      state.responseConfig = data.response || null;
+      state.requests = data.requests || [];
+      indexRequests();
+      $('#webhookUrl').textContent = state.webhookUrl;
+      updateSessionIndicator();
+      updateExamplesLink();
+      syncResponsePanel();
+      renderRequests();
+      renderDetail();
+    }
+
     async function createSession() {
       // Delete the previous regular session to free memory
       const prevId = state.sessionId;
@@ -679,15 +929,9 @@
       const res = await fetch('/api/sessions', { method: 'POST' });
       const data = await res.json();
       resetState();
-      state.sessionId = data.id;
       state.webhookUrl = data.url;
-      state.createdAt = data.createdAt;
       window.location.hash = `session=${data.id}`;
-      $('#webhookUrl').textContent = data.url;
-      updateSessionIndicator();
-      updateExamplesLink();
-      renderRequests();
-      renderDetail();
+      applySessionData({ ...data, requests: [] });
       connectWebSocket();
     }
 
@@ -696,19 +940,10 @@
         const res = await fetch(`/api/sessions/${id}`);
         if (!res.ok) throw new Error('not found');
         const data = await res.json();
-        state.sessionId = data.id;
-        state.longLive = data.longLive || false;
-        state.sessionName = data.name || null;
-        state.createdAt = data.createdAt || null;
         const protocol = window.location.protocol;
         const host = window.location.host;
         state.webhookUrl = `${protocol}//${host}/hook/${data.id}`;
-        state.requests = data.requests || [];
-        indexRequests();
-        $('#webhookUrl').textContent = state.webhookUrl;
-        updateSessionIndicator();
-        updateExamplesLink();
-        renderRequests();
+        applySessionData(data);
         if (state.requests.length > 0) {
           selectRequest(state.requests[state.requests.length - 1].id);
         }
@@ -738,17 +973,28 @@
       };
 
       ws.onmessage = (event) => {
+        let data;
         try {
-          const request = JSON.parse(event.data);
-          state.requests.push(request);
-          state.requestMap.set(request.id, request);
-          state.lastActivity = Date.now();
+          data = JSON.parse(event.data);
+        } catch { return; }
+
+        // Control messages from API-driven mutations (multi-tab sync)
+        if (data && data.__control) {
+          handleControlMessage(data);
+          return;
+        }
+
+        const request = data;
+        state.requests.push(request);
+        state.requestMap.set(request.id, request);
+        state.lastActivity = Date.now();
+        if (matchesFilter(request)) {
           renderNewRequest(request);
-          updateCounts();
-          if (state.requests.length === 1) {
-            selectRequest(request.id);
-          }
-        } catch {}
+        }
+        updateCounts();
+        if (state.requests.length === 1) {
+          selectRequest(request.id);
+        }
       };
 
       ws.onclose = () => {
@@ -761,6 +1007,21 @@
 
       ws.onerror = () => ws.close();
       state.ws = ws;
+    }
+
+    function handleControlMessage(data) {
+      if (data.__control === 'cleared') {
+        state.requests = [];
+        state.requestMap.clear();
+        state.elements.clear();
+        state.selectedId = null;
+        state.activeEl = null;
+        renderRequests();
+        renderDetail();
+        updateCounts();
+      } else if (data.__control === 'request-deleted') {
+        removeRequestLocal(data.id);
+      }
     }
 
     function setStatus(status) {
@@ -778,22 +1039,67 @@
       }
     }
 
+    // ---- Filtering ----
+
+    function matchesFilter(req) {
+      if (state.filterMethod && req.method !== state.filterMethod) return false;
+      if (!state.filterText) return true;
+      const needle = state.filterText.toLowerCase();
+      if ((req.path || '').toLowerCase().includes(needle)) return true;
+      if ((req.body || '').toLowerCase().includes(needle)) return true;
+      if ((req.ip || '').toLowerCase().includes(needle)) return true;
+      try {
+        if (JSON.stringify(req.headers || {}).toLowerCase().includes(needle)) return true;
+        if (JSON.stringify(req.query || {}).toLowerCase().includes(needle)) return true;
+      } catch {}
+      return false;
+    }
+
+    function filteredRequests() {
+      return state.requests.filter(matchesFilter);
+    }
+
     // ---- Rendering ----
+    // All request items are built with DOM APIs + textContent so that
+    // attacker-controlled webhook data can never be interpreted as HTML.
+
+    const KNOWN_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+    function methodClass(method) {
+      const m = String(method || '').toUpperCase().replace(/[^A-Z]/g, '');
+      return KNOWN_METHODS.includes(m) ? m : 'OTHER';
+    }
 
     function renderRequests() {
       const container = $('#requestItems');
-      if (state.requests.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state" id="emptyState">
-            <div class="pulse-dot"></div>
-            <div class="empty-state-text">Waiting for requests...<br>Send a webhook to the URL above</div>
-          </div>`;
+      container.textContent = '';
+      state.elements.clear();
+
+      const visible = filteredRequests();
+      if (visible.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        if (state.requests.length === 0) {
+          const dot = document.createElement('div');
+          dot.className = 'pulse-dot';
+          const text = document.createElement('div');
+          text.className = 'empty-state-text';
+          text.innerHTML = 'Waiting for requests...<br>Send a webhook to the URL above';
+          empty.appendChild(dot);
+          empty.appendChild(text);
+        } else {
+          const text = document.createElement('div');
+          text.className = 'empty-state-text';
+          text.textContent = 'No requests match the current filter.';
+          empty.appendChild(text);
+        }
+        container.appendChild(empty);
+        updateCounts();
         return;
       }
-      container.innerHTML = '';
+
       // Show newest first
-      for (let i = state.requests.length - 1; i >= 0; i--) {
-        container.appendChild(createRequestItem(state.requests[i]));
+      for (let i = visible.length - 1; i >= 0; i--) {
+        container.appendChild(createRequestItem(visible[i]));
       }
       updateCounts();
     }
@@ -815,30 +1121,95 @@
 
       const time = new Date(req.timestamp);
       const timeStr = time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
       const subPath = req.path.replace(`/hook/${state.sessionId}`, '') || '/';
 
-      div.innerHTML = `
-        <span class="method-badge method-${req.method}">${req.method}</span>
-        <div class="request-meta">
-          <div class="request-path">${escapeHtml(subPath)}</div>
-          <div class="request-time">${timeStr} &middot; ${formatSize(req.size)}</div>
-        </div>`;
+      const badge = document.createElement('span');
+      badge.className = `method-badge method-${methodClass(req.method)}`;
+      badge.textContent = String(req.method);
+
+      const meta = document.createElement('div');
+      meta.className = 'request-meta';
+      const pathEl = document.createElement('div');
+      pathEl.className = 'request-path';
+      pathEl.textContent = subPath;
+      const timeEl = document.createElement('div');
+      timeEl.className = 'request-time';
+      timeEl.textContent = `${timeStr} · ${formatSize(req.size)}`;
+      meta.appendChild(pathEl);
+      meta.appendChild(timeEl);
+
+      const del = document.createElement('button');
+      del.className = 'req-delete';
+      del.title = 'Delete this request';
+      del.textContent = '×';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteRequest(req.id);
+      });
+
+      div.appendChild(badge);
+      div.appendChild(meta);
+      div.appendChild(del);
 
       div.addEventListener('click', () => selectRequest(req.id));
+      state.elements.set(req.id, div);
       return div;
     }
 
     function selectRequest(id) {
       state.selectedId = id;
 
-      // O(1) swap instead of O(n) querySelectorAll
+      // O(1) swap via the element map instead of querySelector on raw IDs
       if (state.activeEl) state.activeEl.classList.remove('active');
-      const next = document.querySelector(`.request-item[data-id="${id}"]`);
+      const next = state.elements.get(id) || null;
       if (next) next.classList.add('active');
       state.activeEl = next;
 
       renderDetail();
+    }
+
+    function removeRequestLocal(id) {
+      const idx = state.requests.findIndex((r) => r.id === id);
+      if (idx !== -1) state.requests.splice(idx, 1);
+      state.requestMap.delete(id);
+      const el = state.elements.get(id);
+      if (el) {
+        el.remove();
+        state.elements.delete(id);
+      }
+      if (state.activeEl === el) state.activeEl = null;
+      if (state.selectedId === id) {
+        state.selectedId = null;
+        renderDetail();
+      }
+      if (state.requests.length === 0) renderRequests();
+      updateCounts();
+    }
+
+    async function deleteRequest(id) {
+      // Optimistic local removal; server broadcasts keep other tabs in sync
+      removeRequestLocal(id);
+      try {
+        await fetch(`/api/sessions/${state.sessionId}/requests/${id}`, { method: 'DELETE' });
+      } catch {}
+    }
+
+    async function clearAllRequests() {
+      if (state.requests.length === 0) return;
+      if (!window.confirm(`Delete all ${state.requests.length} captured request(s)?`)) return;
+      try {
+        const res = await fetch(`/api/sessions/${state.sessionId}/requests`, { method: 'DELETE' });
+        if (res.ok) {
+          state.requests = [];
+          state.requestMap.clear();
+          state.elements.clear();
+          state.selectedId = null;
+          state.activeEl = null;
+          renderRequests();
+          renderDetail();
+          updateCounts();
+        }
+      } catch {}
     }
 
     function renderDetail() {
@@ -877,12 +1248,16 @@
 
       panel.innerHTML = `
         <div class="detail-header">
-          <span class="method-badge method-${req.method}" style="font-size:14px; padding:5px 12px;">${req.method}</span>
+          <span class="method-badge method-${methodClass(req.method)}" style="font-size:14px; padding:5px 12px;">${escapeHtml(String(req.method))}</span>
           <div class="detail-info">
             <div class="detail-info-item">Path: <span>${escapeHtml(subPath)}</span></div>
             <div class="detail-info-item">IP: <span>${escapeHtml(req.ip || 'unknown')}</span></div>
-            <div class="detail-info-item">Time: <span>${timeStr}</span></div>
+            <div class="detail-info-item">Time: <span>${escapeHtml(timeStr)}</span></div>
+            <div class="detail-info-item">Size: <span>${formatSize(req.size)}</span></div>
             ${req.contentType ? `<div class="detail-info-item">Type: <span>${escapeHtml(req.contentType)}</span></div>` : ''}
+          </div>
+          <div class="detail-actions">
+            <button class="btn btn-sm" id="copyCurlBtn">Copy as cURL</button>
           </div>
         </div>
 
@@ -910,12 +1285,106 @@
 
         ${bodyHtml}
       `;
+
+      $('#copyCurlBtn').addEventListener('click', () => copyAsCurl(req));
     }
 
     function updateCounts() {
       const count = state.requests.length;
-      $('#requestCount').textContent = count;
+      const visible = filteredRequests().length;
+      $('#requestCount').textContent = visible === count ? count : `${visible}/${count}`;
       $('#requestTotal').textContent = `${count} request${count !== 1 ? 's' : ''} captured`;
+    }
+
+    // ---- Copy as cURL ----
+
+    function shellQuote(s) {
+      return `'${String(s).replace(/'/g, `'\\''`)}'`;
+    }
+
+    function buildCurl(req) {
+      const subPath = req.path.replace(`/hook/${state.sessionId}`, '') || '';
+      const qs = new URLSearchParams(req.query || {}).toString();
+      const fullUrl = `${state.webhookUrl}${subPath}${qs ? `?${qs}` : ''}`;
+
+      const lines = [`curl -X ${String(req.method).toUpperCase()} ${shellQuote(fullUrl)}`];
+      const skip = new Set(['host', 'content-length', 'connection', 'accept-encoding']);
+      for (const [k, v] of Object.entries(req.headers || {})) {
+        if (skip.has(k.toLowerCase())) continue;
+        lines.push(`  -H ${shellQuote(`${k}: ${v}`)}`);
+      }
+      if (req.body) {
+        lines.push(`  --data ${shellQuote(req.body)}`);
+      }
+      return lines.join(' \\\n');
+    }
+
+    async function copyAsCurl(req) {
+      const btn = $('#copyCurlBtn');
+      try {
+        await navigator.clipboard.writeText(buildCurl(req));
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy as cURL';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch {}
+    }
+
+    // ---- Custom response panel ----
+
+    function syncResponsePanel() {
+      const cfg = state.responseConfig;
+      const note = $('#respNote');
+      if (cfg) {
+        $('#respStatus').value = cfg.status;
+        $('#respContentType').value = cfg.contentType || 'application/json';
+        $('#respBody').value = cfg.body || '';
+        note.textContent = `Active: hooks to this URL respond ${cfg.status} with your custom body.`;
+        note.classList.add('custom');
+      } else {
+        $('#respStatus').value = 200;
+        $('#respContentType').value = 'application/json';
+        $('#respBody').value = '';
+        note.textContent = 'Default: hooks respond 200 {"ok":true}';
+        note.classList.remove('custom');
+      }
+    }
+
+    async function saveResponseConfig() {
+      const status = parseInt($('#respStatus').value, 10);
+      const contentType = $('#respContentType').value.trim() || 'application/json';
+      const body = $('#respBody').value;
+      const note = $('#respNote');
+
+      try {
+        const res = await fetch(`/api/sessions/${state.sessionId}/response`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, body, contentType }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          note.textContent = `Error: ${data.error || 'failed to save'}`;
+          note.classList.remove('custom');
+          return;
+        }
+        state.responseConfig = data.response;
+        note.textContent = `Saved — hooks now respond ${data.response.status}.`;
+        note.classList.add('custom');
+      } catch {
+        note.textContent = 'Error: could not reach the server.';
+        note.classList.remove('custom');
+      }
+    }
+
+    async function resetResponseConfig() {
+      try {
+        await fetch(`/api/sessions/${state.sessionId}/response`, { method: 'DELETE' });
+      } catch {}
+      state.responseConfig = null;
+      syncResponsePanel();
     }
 
     // ---- Utilities ----
@@ -927,7 +1396,7 @@
     }
 
     function formatSize(bytes) {
-      if (bytes === 0) return '0 B';
+      if (!bytes || bytes === 0) return '0 B';
       if (bytes < 1024) return bytes + ' B';
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -966,6 +1435,26 @@
     });
 
     $('#newSessionBtn').addEventListener('click', () => createSession());
+    $('#clearAllBtn').addEventListener('click', () => clearAllRequests());
+
+    $('#filterText').addEventListener('input', (e) => {
+      state.filterText = e.target.value.trim();
+      renderRequests();
+    });
+
+    $('#filterMethod').addEventListener('change', (e) => {
+      state.filterMethod = e.target.value;
+      renderRequests();
+    });
+
+    $('#responseBtn').addEventListener('click', () => {
+      const panel = $('#responsePanel');
+      panel.classList.toggle('show');
+      $('#responseBtn').classList.toggle('active-toggle', panel.classList.contains('show'));
+    });
+
+    $('#respSaveBtn').addEventListener('click', saveResponseConfig);
+    $('#respResetBtn').addEventListener('click', resetResponseConfig);
 
     // Keep examples link in sync with current session
     const examplesLink = $('#examplesBtn');
@@ -1005,7 +1494,7 @@
         _s.v = false;
         if (state.ws) { state.ws.onclose = null; state.ws.close(); }
         state.ws = null;
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;color:#f87171;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#8b90a5;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;color:#b91c1c;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#52525b;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
       }
 
       // Periodic check every 3s

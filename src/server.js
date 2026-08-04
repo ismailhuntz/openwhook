@@ -14,6 +14,38 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, 'public');
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOOK_BODY_LIMIT = process.env.HOOK_BODY_LIMIT || '1mb';
+const API_BODY_LIMIT = process.env.API_BODY_LIMIT || '64kb';
+
+// Do not advertise the framework
+app.disable('x-powered-by');
+
+// ---- Security headers ----
+// CSP note: the frontend is intentionally dependency-free with inline
+// <script>/<style> blocks, so 'unsafe-inline' is required for script-src and
+// style-src. This is the strictest policy compatible with that design;
+// everything else (objects, frames, form targets, base URI) is locked down.
+app.use((_req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'DENY',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "script-src 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data:",
+      "connect-src 'self' ws: wss:",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  });
+  next();
+});
 
 // ---- Branding integrity check at startup ----
 const brandCheck = verifyDirectory(publicDir);
@@ -37,7 +69,7 @@ app.use(brandingGuard(publicDir));
 app.use(express.static(publicDir));
 
 // API routes (only need JSON parsing)
-app.use('/api', express.json({ limit: '64kb' }), apiRoutes);
+app.use('/api', express.json({ limit: API_BODY_LIMIT }), apiRoutes);
 
 // Body parsers scoped to /hook only — avoids overhead on static/API routes
 const rawBodyCapture = (req, _res, buf) => {
@@ -45,12 +77,26 @@ const rawBodyCapture = (req, _res, buf) => {
   req.rawBodySize = buf.length;
 };
 const hookParsers = [
-  express.json({ limit: '1mb', verify: rawBodyCapture }),
-  express.urlencoded({ extended: true, limit: '1mb', verify: rawBodyCapture }),
-  express.text({ type: 'text/*', limit: '1mb', verify: rawBodyCapture }),
-  express.raw({ type: '*/*', limit: '1mb', verify: rawBodyCapture }),
+  express.json({ limit: HOOK_BODY_LIMIT, verify: rawBodyCapture }),
+  express.urlencoded({ extended: true, limit: HOOK_BODY_LIMIT, verify: rawBodyCapture }),
+  express.text({ type: 'text/*', limit: HOOK_BODY_LIMIT, verify: rawBodyCapture }),
+  express.raw({ type: '*/*', limit: HOOK_BODY_LIMIT, verify: rawBodyCapture }),
 ];
 app.use('/hook', hookParsers, hookRoutes);
+
+// Central error handler — clean JSON for body-parser failures (413/400)
+// instead of Express's default HTML error pages.
+app.use((err, _req, res, next) => { // eslint-disable-line no-unused-vars
+  if (!err) return next();
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: `Payload too large (limit: ${HOOK_BODY_LIMIT} for hooks, ${API_BODY_LIMIT} for API)` });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Malformed request body' });
+  }
+  console.error('[ERROR]', err.message);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 // Create HTTP server and attach WebSocket
 const server = http.createServer(app);

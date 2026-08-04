@@ -4,28 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenWhook — Implementation Examples</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-primary: #0f1117;
-      --bg-secondary: #1a1d27;
-      --bg-tertiary: #242736;
-      --bg-hover: #2a2e3f;
-      --border: #2e3348;
-      --text-primary: #e1e4ed;
-      --text-secondary: #8b90a5;
-      --text-muted: #5c6178;
-      --accent: #6c8cff;
-      --accent-hover: #8ba4ff;
-      --green: #4ade80;
-      --blue: #60a5fa;
-      --orange: #fb923c;
-      --red: #f87171;
-      --purple: #c084fc;
-      --yellow: #facc15;
+      --bg-primary: #fafafa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f2f4;
+      --bg-hover: #eceef1;
+      --bg-active: #f6ecd4;
+      --border: #e4e4e7;
+      --text-primary: #0f172a;
+      --text-secondary: #52525b;
+      --text-muted: #8a8f98;
+      --accent: #c9a227;
+      --accent-hover: #a8861d;
+      --accent-ink: #1c1917;
+      --green: #15803d;
+      --blue: #1d4ed8;
+      --orange: #c2410c;
+      --red: #b91c1c;
+      --teal: #0f766e;
+      --yellow: #a16207;
       --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --radius: 8px;
       --radius-sm: 5px;
     }
@@ -70,7 +75,8 @@
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      color: #fff;
+      color: var(--accent-ink);
+      font-weight: 700;
     }
 
     .header-actions { display: flex; gap: 8px; }
@@ -94,8 +100,8 @@
     }
 
     .btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
-    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 
     /* Layout */
     .container {
@@ -143,7 +149,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 9px 12px;
-      color: var(--accent);
+      color: var(--accent-hover);
       outline: none;
       transition: border-color 0.15s;
     }
@@ -183,8 +189,8 @@
     .lang-tab:hover { color: var(--text-secondary); }
 
     .lang-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: var(--accent-hover);
+      border-bottom-color: var(--accent-hover);
     }
 
     .lang-dot {
@@ -270,14 +276,14 @@
     }
 
     /* Syntax colors */
-    .hl-kw { color: #c084fc; }
-    .hl-fn { color: #60a5fa; }
-    .hl-str { color: #86efac; }
+    .hl-kw { color: #7c3aed; }
+    .hl-fn { color: #1d4ed8; }
+    .hl-str { color: #15803d; }
     .hl-cm { color: var(--text-muted); font-style: italic; }
-    .hl-num { color: #fbbf24; }
-    .hl-type { color: #7dd3fc; }
+    .hl-num { color: #b45309; }
+    .hl-type { color: #0369a1; }
     .hl-op { color: var(--text-secondary); }
-    .hl-var { color: #f0abfc; }
+    .hl-var { color: #be185d; }
 
     /* Example cards */
     .example-grid {
@@ -330,7 +336,7 @@
       justify-content: center;
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--accent-hover);
     }
 
     .step-text {
@@ -396,7 +402,7 @@
       <div class="steps">
         <div class="step">
           <div class="step-num">1</div>
-          <div class="step-text"><strong>Create a session</strong> &mdash; visit the app to get a unique webhook URL like <code style="color:var(--accent)">https://yourhost.com/hook/&lt;session-id&gt;</code></div>
+          <div class="step-text"><strong>Create a session</strong> &mdash; visit the app to get a unique webhook URL like <code style="color:var(--accent-hover)">https://yourhost.com/hook/&lt;session-id&gt;</code></div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
@@ -988,7 +994,7 @@ curl -X POST <span class="hl-str url-placeholder">WEBHOOK_BASE</span><span class
         return a && a.href.includes(_k[1]) && el.textContent.includes(_k[2]);
       }
       function _fail() {
-        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f1117;color:#f87171;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#8b90a5;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;color:#b91c1c;font-family:sans-serif;text-align:center;padding:20px"><div><h2 style="margin-bottom:12px">Application Error</h2><p style="color:#52525b;font-size:14px">Required branding attribution has been removed or hidden.<br>Restore the &ldquo;Powered by Huntz Group&rdquo; footer to continue.</p></div></div>';
       }
       setInterval(() => { if (!_chk()) _fail(); }, 3000);
       new MutationObserver((muts) => {

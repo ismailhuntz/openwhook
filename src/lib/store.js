@@ -31,6 +31,7 @@ function makeSession() {
     _lastActivityTs: now,
     requests: [],
     _head: 0,
+    response: null, // custom hook response: { status, body, contentType }
   };
 }
 
@@ -166,6 +167,31 @@ export function deleteSession(id) {
     return true;
   }
   return false;
+}
+
+// Remove a single captured request. The circular buffer is unwrapped,
+// filtered, and rebuilt linearly — O(n) but n <= MAX_REQUESTS (<= 200).
+export function deleteRequest(sessionId, requestId) {
+  const session = sessions.get(sessionId) || longLiveSessions.get(sessionId);
+  if (!session) return { found: false, removed: false };
+
+  const ordered = getSessionRequests(session);
+  const idx = ordered.findIndex((r) => r.id === requestId);
+  if (idx === -1) return { found: true, removed: false };
+
+  ordered.splice(idx, 1);
+  session.requests = ordered;
+  session._head = 0;
+  return { found: true, removed: true };
+}
+
+export function clearRequests(session) {
+  session.requests = [];
+  session._head = 0;
+}
+
+export function setSessionResponse(session, response) {
+  session.response = response;
 }
 
 export function clearAll() {
